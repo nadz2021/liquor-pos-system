@@ -1,0 +1,164 @@
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(120) NOT NULL,
+  username VARCHAR(60) NOT NULL UNIQUE,
+  pin_hash VARCHAR(255) NOT NULL,
+  role ENUM('owner','manager','cashier') NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  k VARCHAR(120) NOT NULL UNIQUE,
+  v TEXT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS products (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  barcode VARCHAR(64) NOT NULL UNIQUE,
+  name VARCHAR(255) NOT NULL,
+  description TEXT NULL,
+  image_path VARCHAR(255) NULL,
+  category_id INT NULL,
+  subcategory_id INT NULL,
+  cost DECIMAL(10,2) NOT NULL DEFAULT 0,
+  price DECIMAL(10,2) NOT NULL DEFAULT 0,
+  stock INT NOT NULL DEFAULT 0,
+  reorder_point INT NOT NULL DEFAULT 0,
+  low_stock_threshold INT NOT NULL DEFAULT 0,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_products_category
+    FOREIGN KEY (category_id) REFERENCES categories(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_products_subcategory
+    FOREIGN KEY (subcategory_id) REFERENCES subcategories(id)
+    ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS suppliers (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(255) NOT NULL,
+  description TEXT NULL,
+  phone VARCHAR(50) NULL,
+  email VARCHAR(120) NULL,
+  address VARCHAR(255) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS purchase_orders (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  supplier_id BIGINT UNSIGNED NOT NULL,
+  status ENUM('draft','ordered','received','cancelled') NOT NULL DEFAULT 'draft',
+  notes TEXT NULL,
+  created_by BIGINT UNSIGNED NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
+  FOREIGN KEY (created_by) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS purchase_order_items (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  purchase_order_id BIGINT UNSIGNED NOT NULL,
+  product_id BIGINT UNSIGNED NOT NULL,
+  qty INT NOT NULL,
+  cost DECIMAL(10,2) NOT NULL DEFAULT 0,
+  FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id),
+  FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+CREATE TABLE IF NOT EXISTS sales (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  sale_no VARCHAR(30) NOT NULL UNIQUE,
+  cashier_id BIGINT UNSIGNED NOT NULL,
+  subtotal DECIMAL(10,2) NOT NULL DEFAULT 0,
+  discount_total DECIMAL(10,2) NOT NULL DEFAULT 0,
+  tax_total DECIMAL(10,2) NOT NULL DEFAULT 0,
+  total DECIMAL(10,2) NOT NULL DEFAULT 0,
+  amount_received DECIMAL(10,2) NOT NULL DEFAULT 0,
+  change_due DECIMAL(10,2) NOT NULL DEFAULT 0,
+  payment_method ENUM('cash','gcash_ref','gift_card','store_credit','card_terminal') NOT NULL,
+  payment_ref VARCHAR(120) NULL,
+  loyalty_customer_id BIGINT UNSIGNED NULL,
+  loyalty_points_earned INT NOT NULL DEFAULT 0,
+  loyalty_points_redeemed INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (cashier_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS sale_items (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  sale_id BIGINT UNSIGNED NOT NULL,
+  product_id BIGINT UNSIGNED NOT NULL,
+  barcode VARCHAR(64) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  qty INT NOT NULL,
+  unit_price DECIMAL(10,2) NOT NULL,
+  line_total DECIMAL(10,2) NOT NULL,
+  FOREIGN KEY (sale_id) REFERENCES sales(id),
+  FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+CREATE TABLE IF NOT EXISTS inventory_movements (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  product_id BIGINT UNSIGNED NOT NULL,
+  type ENUM('sale','receive','adjust','void') NOT NULL,
+  ref_table VARCHAR(60) NULL,
+  ref_id BIGINT UNSIGNED NULL,
+  qty_change INT NOT NULL,
+  note VARCHAR(255) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+CREATE TABLE IF NOT EXISTS loyalty_customers (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  phone VARCHAR(30) NOT NULL UNIQUE,
+  name VARCHAR(120) NULL,
+  points INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NULL,
+  action VARCHAR(120) NOT NULL,
+  meta JSON NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS sync_queue (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  entity VARCHAR(60) NOT NULL,
+  entity_id BIGINT UNSIGNED NOT NULL,
+  payload JSON NOT NULL,
+  status ENUM('pending','sent','failed') NOT NULL DEFAULT 'pending',
+  try_count INT NOT NULL DEFAULT 0,
+  last_error TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS categories (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(120) NOT NULL UNIQUE,
+  description TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS subcategories (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  category_id INT NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  description TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_category_subcategory (category_id, name),
+  CONSTRAINT fk_subcategories_category
+    FOREIGN KEY (category_id) REFERENCES categories(id)
+    ON DELETE CASCADE
+);
