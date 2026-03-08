@@ -1,4 +1,7 @@
 name,description
-Beer,Alcoholic beverage brewed from grains
+Beer,Alcoholic beverage brewed from grains,
+Wine,All wine items,
 Spirits,Distilled alcoholic beverages
 Snacks,Packaged snack foods
+Beer,Duplicate sample
+Vodka,

@@ -12,6 +12,15 @@
   </div>
 </div>
 
+<?php if (!empty($_SESSION['flash_import'])): ?>
+  <?php $flash = $_SESSION['flash_import']; unset($_SESSION['flash_import']); ?>
+  <div class="card" style="margin-bottom:12px; border-color: <?= ($flash['type'] ?? '') === 'error' ? '#ef4444' : '#16a34a' ?>;">
+    <strong><?= ($flash['type'] ?? '') === 'error' ? 'Import Error' : 'Import Result' ?></strong>
+    <div style="margin-top:6px;">
+      <?= htmlspecialchars($flash['message'] ?? '') ?>
+    </div>
+  </div>
+<?php endif; ?>
 <div class="card" style="margin-bottom:12px;">
   <div class="form-row">
     <div class="field">

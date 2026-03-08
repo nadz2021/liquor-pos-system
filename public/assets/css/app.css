@@ -267,6 +267,32 @@ input:focus, select:focus, textarea:focus{
   box-shadow: 0 0 0 3px var(--focus);
 }
 
+select{
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  width:100%;
+  padding: 10px 38px 10px 12px;
+  font-size:14px;
+
+  border:1px solid var(--border);
+  border-radius:12px;
+
+  background:
+    rgba(255,255,255,.9)
+    url("data:image/svg+xml;utf8,<svg fill='%236b7280' height='20' viewBox='0 0 20 20' width='20' xmlns='http://www.w3.org/2000/svg'><path d='M5.25 7.5L10 12.25 14.75 7.5'/></svg>")
+    no-repeat right 10px center;
+
+  background-size:16px;
+  cursor:pointer;
+}
+
+select:focus{
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--focus);
+}
+
 /* Tables */
 .table{
   width:100%;

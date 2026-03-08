@@ -5,13 +5,20 @@
     <h1 class="page-title">Categories</h1>
     <div class="page-subtitle">Manage your product categories</div>
   </div>
-
   <div class="page-actions">
     <a href="/categories/create" class="btn btn-primary">+ Add Category</a>
     <button type="button" class="btn-secondary" onclick="openCategoryImportModal()">Import CSV</button>
   </div>
 </div>
-
+<?php if (!empty($_SESSION['flash_import'])): ?>
+  <?php $flash = $_SESSION['flash_import']; unset($_SESSION['flash_import']); ?>
+  <div class="card" style="margin-bottom:12px; border-color: <?= ($flash['type'] ?? '') === 'error' ? '#ef4444' : '#16a34a' ?>;">
+    <strong><?= ($flash['type'] ?? '') === 'error' ? 'Import Error' : 'Import Result' ?></strong>
+    <div style="margin-top:6px;">
+      <?= htmlspecialchars($flash['message'] ?? '') ?>
+    </div>
+  </div>
+<?php endif; ?>
 <div class="card">
   <?php if (empty($categories)): ?>
     <div class="muted">No categories found.</div>

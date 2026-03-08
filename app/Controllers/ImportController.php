@@ -24,33 +24,45 @@ final class ImportController extends Controller
             empty($_FILES['file']) ||
             ($_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
         ) {
-            http_response_code(400);
-            echo 'No CSV file uploaded.';
-            return;
+            $_SESSION['flash_import'] = [
+                'type' => 'error',
+                'message' => 'No CSV file uploaded.'
+            ];
+            header('Location: /products');
+            exit;
         }
 
         $tmp = (string)$_FILES['file']['tmp_name'];
         $name = (string)($_FILES['file']['name'] ?? '');
 
         if (!$this->isCsvFile($name, $tmp)) {
-            http_response_code(400);
-            echo 'Invalid file. Please upload a CSV file.';
-            return;
+            $_SESSION['flash_import'] = [
+                'type' => 'error',
+                'message' => 'Invalid file. Please upload a CSV file.'
+            ];
+            header('Location: /products');
+            exit;
         }
 
         $fp = fopen($tmp, 'r');
         if (!$fp) {
-            http_response_code(400);
-            echo 'Unable to read uploaded file.';
-            return;
+            $_SESSION['flash_import'] = [
+                'type' => 'error',
+                'message' => 'Unable to read uploaded file.'
+            ];
+            header('Location: /products');
+            exit;
         }
 
         $headers = fgetcsv($fp);
         if (!$headers) {
             fclose($fp);
-            http_response_code(400);
-            echo 'CSV is empty.';
-            return;
+            $_SESSION['flash_import'] = [
+                'type' => 'error',
+                'message' => 'CSV is empty.'
+            ];
+            header('Location: /products');
+            exit;
         }
 
         $headers = array_map(fn($v) => strtolower(trim((string)$v)), $headers);
@@ -59,9 +71,12 @@ final class ImportController extends Controller
         foreach ($required as $col) {
             if (!in_array($col, $headers, true)) {
                 fclose($fp);
-                http_response_code(400);
-                echo "Missing required column: {$col}";
-                return;
+                $_SESSION['flash_import'] = [
+                    'type' => 'error',
+                    'message' => 'Missing required column: '. $col
+                ];
+                header('Location: /products');
+                exit;
             }
         }
 
@@ -69,19 +84,14 @@ final class ImportController extends Controller
         $pdo = DB::pdo();
 
         $findCategory = $pdo->prepare("SELECT id FROM categories WHERE name=? LIMIT 1");
-        $insertCategory = $pdo->prepare("INSERT INTO categories (name, description) VALUES (?, ?)");
 
         $findSubcategory = $pdo->prepare("
             SELECT id FROM subcategories
             WHERE category_id=? AND name=?
             LIMIT 1
         ");
-        $insertSubcategory = $pdo->prepare("
-            INSERT INTO subcategories (category_id, name, description)
-            VALUES (?, ?, ?)
-        ");
 
-        $checkProduct = $pdo->prepare("SELECT COUNT(*) FROM products WHERE barcode=?");
+        $checkProduct = $pdo->prepare("SELECT COUNT(*) FROM products WHERE barcode=? OR name=?");
         $insertProduct = $pdo->prepare("
             INSERT INTO products
             (
@@ -101,6 +111,10 @@ final class ImportController extends Controller
             VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, 0, 0, 1)
         ");
 
+        $newCount = 0;
+        $skipCount = 0;
+        $emptyCount = 0;
+
         while (($row = fgetcsv($fp)) !== false) {
             $barcode = trim((string)($row[$map['barcode']] ?? ''));
             $nameVal = trim((string)($row[$map['name']] ?? ''));
@@ -111,6 +125,7 @@ final class ImportController extends Controller
             $stock = trim((string)($row[$map['stock']] ?? '0'));
 
             if ($nameVal === '') {
+                $emptyCount++;
                 continue;
             }
 
@@ -122,8 +137,9 @@ final class ImportController extends Controller
                 $barcode = $this->generateUniqueBarcode();
             }
 
-            $checkProduct->execute([$barcode]);
+            $checkProduct->execute([$barcode, $nameVal]);
             if ((int)$checkProduct->fetchColumn() > 0) {
+                $skipCount++;
                 continue;
             }
 
@@ -150,97 +166,133 @@ final class ImportController extends Controller
                 (float)$price,
                 (int)$stock,
             ]);
+
+            $newCount++;
         }
 
         fclose($fp);
+
+        $_SESSION['flash_import'] = [
+            'type' => 'success',
+            'message' => "Import completed. New categories: {$newCount}. Skipped duplicates: {$skipCount}. Empty rows skipped: {$emptyCount}."
+        ];
 
         header('Location: /products');
         exit;
     }
 
     public function categories(): void
-    {
-        Auth::requireLogin();
+{
+    Auth::requireLogin();
 
-        $role = Auth::user()['role'] ?? '';
-        if (!in_array($role, ['super_admin', 'admin', 'owner'], true)) {
-            http_response_code(403);
-            echo 'Forbidden';
-            return;
-        }
+    $role = Auth::user()['role'] ?? '';
+    if (!in_array($role, ['super_admin', 'admin', 'owner'], true)) {
+        http_response_code(403);
+        echo 'Forbidden';
+        return;
+    }
 
-        if (
-            empty($_FILES['file']) ||
-            ($_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
-        ) {
-            http_response_code(400);
-            echo 'No CSV file uploaded.';
-            return;
-        }
-
-        $tmp = (string)$_FILES['file']['tmp_name'];
-        $name = (string)($_FILES['file']['name'] ?? '');
-
-        if (!$this->isCsvFile($name, $tmp)) {
-            http_response_code(400);
-            echo 'Invalid file. Please upload a CSV file.';
-            return;
-        }
-
-        $fp = fopen($tmp, 'r');
-        if (!$fp) {
-            http_response_code(400);
-            echo 'Unable to read uploaded file.';
-            return;
-        }
-
-        $headers = fgetcsv($fp);
-        if (!$headers) {
-            fclose($fp);
-            http_response_code(400);
-            echo 'CSV is empty.';
-            return;
-        }
-
-        $headers = array_map(fn($v) => strtolower(trim((string)$v)), $headers);
-
-        if (!in_array('name', $headers, true)) {
-            fclose($fp);
-            http_response_code(400);
-            echo 'Missing required column: name';
-            return;
-        }
-
-        $map = array_flip($headers);
-        $pdo = DB::pdo();
-
-        $checkCategory = $pdo->prepare("SELECT COUNT(*) FROM categories WHERE name=?");
-        $insertCategory = $pdo->prepare("INSERT INTO categories (name, description) VALUES (?, ?)");
-
-        while (($row = fgetcsv($fp)) !== false) {
-            $category = trim((string)($row[$map['name']] ?? ''));
-            $description = trim((string)($row[$map['description']] ?? ''));
-
-            if ($category === '') {
-                continue;
-            }
-
-            $checkCategory->execute([$category]);
-            if ((int)$checkCategory->fetchColumn() > 0) {
-                continue;
-            }
-
-            $insertCategory->execute([
-                $category,
-                $description !== '' ? $description : null
-            ]);
-        }
-
-        fclose($fp);
-
+    if (
+        empty($_FILES['file']) ||
+        ($_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
+    ) {
+        $_SESSION['flash_import'] = [
+            'type' => 'error',
+            'message' => 'No CSV file uploaded.'
+        ];
         header('Location: /categories');
         exit;
     }
+
+    $tmp = (string)$_FILES['file']['tmp_name'];
+    $name = (string)($_FILES['file']['name'] ?? '');
+
+    if (!$this->isCsvFile($name, $tmp)) {
+        $_SESSION['flash_import'] = [
+            'type' => 'error',
+            'message' => 'Invalid file. Please upload a CSV file.'
+        ];
+        header('Location: /categories');
+        exit;
+    }
+
+    $fp = fopen($tmp, 'r');
+    if (!$fp) {
+        $_SESSION['flash_import'] = [
+            'type' => 'error',
+            'message' => 'Unable to read uploaded file.'
+        ];
+        header('Location: /categories');
+        exit;
+    }
+
+    $headers = fgetcsv($fp);
+    if (!$headers) {
+        fclose($fp);
+        $_SESSION['flash_import'] = [
+            'type' => 'error',
+            'message' => 'CSV is empty.'
+        ];
+        header('Location: /categories');
+        exit;
+    }
+
+    $headers = array_map(fn($v) => strtolower(trim((string)$v)), $headers);
+
+    if (!in_array('name', $headers, true)) {
+        fclose($fp);
+        $_SESSION['flash_import'] = [
+            'type' => 'error',
+            'message' => 'Missing required column: name'
+        ];
+        header('Location: /categories');
+        exit;
+    }
+
+    $map = array_flip($headers);
+    $pdo = DB::pdo();
+
+    // case-insensitive duplicate check
+    $checkCategory = $pdo->prepare("SELECT COUNT(*) FROM categories WHERE LOWER(name) = LOWER(?)");
+    $insertCategory = $pdo->prepare("INSERT INTO categories (name, description) VALUES (?, ?)");
+
+    $newCount = 0;
+    $skipCount = 0;
+    $emptyCount = 0;
+
+    while (($row = fgetcsv($fp)) !== false) {
+        $category = trim((string)($row[$map['name']] ?? ''));
+        $description = trim((string)($row[$map['description']] ?? ''));
+
+        if ($category === '') {
+            $emptyCount++;
+            continue;
+        }
+
+        $checkCategory->execute([$category]);
+        if ((int)$checkCategory->fetchColumn() > 0) {
+            $skipCount++;
+            continue;
+        }
+
+        $insertCategory->execute([
+            $category,
+            $description !== '' ? $description : null
+        ]);
+
+        $newCount++;
+    }
+
+    fclose($fp);
+
+    $_SESSION['flash_import'] = [
+        'type' => 'success',
+        'message' => "Import completed. New categories: {$newCount}. Skipped duplicates: {$skipCount}. Empty rows skipped: {$emptyCount}."
+    ];
+
+    header('Location: /categories');
+    exit;
+}
 
     public function subcategories(): void
     {
