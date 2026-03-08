@@ -106,9 +106,7 @@ final class ImportController extends Controller
             $nameVal = trim((string)($row[$map['name']] ?? ''));
             $description = trim((string)($row[$map['description']] ?? ''));
             $categoryName = trim((string)($row[$map['category']] ?? ''));
-            $categoryDescription = trim((string)($row[$map['category_description']] ?? ''));
             $subcategoryName = trim((string)($row[$map['subcategory']] ?? ''));
-            $subcategoryDescription = trim((string)($row[$map['subcategory_description']] ?? ''));
             $price = trim((string)($row[$map['price']] ?? '0'));
             $stock = trim((string)($row[$map['stock']] ?? '0'));
 
@@ -136,24 +134,10 @@ final class ImportController extends Controller
             $findCategory->execute([$categoryName]);
             $categoryId = (int)($findCategory->fetchColumn() ?: 0);
 
-            if ($categoryId === 0) {
-                $insertCategory->execute([$categoryName, $categoryDescription !== '' ? $categoryDescription : null]);
-                $categoryId = (int)$pdo->lastInsertId();
-            }
-
             $subcategoryId = null;
             if ($subcategoryName !== '') {
                 $findSubcategory->execute([$categoryId, $subcategoryName]);
                 $subcategoryId = (int)($findSubcategory->fetchColumn() ?: 0);
-
-                if ($subcategoryId === 0) {
-                    $insertSubcategory->execute([
-                        $categoryId,
-                        $subcategoryName,
-                        $subcategoryDescription !== '' ? $subcategoryDescription : null
-                    ]);
-                    $subcategoryId = (int)$pdo->lastInsertId();
-                }
             }
 
             $insertProduct->execute([
@@ -333,7 +317,6 @@ final class ImportController extends Controller
             $categoryName = trim((string)($row[$map['category']] ?? ''));
             $subcategoryName = trim((string)($row[$map['name']] ?? ''));
             $description = trim((string)($row[$map['description']] ?? ''));
-            $categoryDescription = trim((string)($row[$map['category_description']] ?? ''));
 
             if ($categoryName === '' || $subcategoryName === '') {
                 continue;
@@ -342,14 +325,7 @@ final class ImportController extends Controller
             $findCategory->execute([$categoryName]);
             $categoryId = (int)($findCategory->fetchColumn() ?: 0);
 
-            if ($categoryId === 0) {
-                $insertCategory->execute([
-                    $categoryName,
-                    $categoryDescription !== '' ? $categoryDescription : null
-                ]);
-                $categoryId = (int)$pdo->lastInsertId();
-            }
-
+            
             $checkSubcategory->execute([$categoryId, $subcategoryName]);
             if ((int)$checkSubcategory->fetchColumn() > 0) {
                 continue;

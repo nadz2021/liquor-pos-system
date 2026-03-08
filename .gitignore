@@ -17,9 +17,6 @@ docker/mysql/
 # Logs
 *.log
 
-# Uploads (optional if you don't want product images in repo)
-public/uploads/
-
 # Node
 node_modules/
 

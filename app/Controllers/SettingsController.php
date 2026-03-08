@@ -12,7 +12,7 @@ final class SettingsController extends Controller {
   public function index(): void {
     Auth::requireLogin();
     $role = Auth::user()['role'] ?? '';
-    if (!in_array($role, ['owner','manager'], true)) { http_response_code(403); echo "Forbidden"; return; }
+    if (!in_array($role, ['admin','owner','manager'], true)) { http_response_code(403); echo "Forbidden"; return; }
 
     $this->view('settings/index', ['user'=>Auth::user(), 'settings'=>Setting::all()]);
   }
@@ -20,7 +20,7 @@ final class SettingsController extends Controller {
   public function save(): void {
     Auth::requireLogin();
     $role = Auth::user()['role'] ?? '';
-    if (!in_array($role, ['owner','manager'], true)) { http_response_code(403); echo "Forbidden"; return; }
+    if (!in_array($role, ['admin','owner','manager'], true)) { http_response_code(403); echo "Forbidden"; return; }
 
     $pairs = [
       'store_name' => trim((string)($_POST['store_name'] ?? '')),

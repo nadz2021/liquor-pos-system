@@ -5,8 +5,10 @@
     <h1 class="page-title">Sub Categories</h1>
     <div class="page-subtitle">Manage sub categories under each main category.</div>
   </div>
+  <div class="page-actions">
+    <button type="button" class="btn-secondary" onclick="openSubCategoryImportModal()">Import CSV</button>
+  </div>
 </div>
-
 <div class="card">
   <form class="form" method="post" action="/subcategories/store">
     <div class="form-row">
@@ -57,7 +59,45 @@
     <?php endforeach; ?>
   </tbody>
 </table>
+<div id="importSubCategoryModal" class="modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 class="modal-title">Import Sub Categories</h3>
+      <div class="modal-subtitle">
+        Upload a CSV file to bulk add sub categories into the system.
+      </div>
+    </div>
 
+    <form action="/import/subcategories" method="post" enctype="multipart/form-data">
+      <div class="modal-body">
+        <div class="modal-field">
+          <label>Upload CSV File</label>
+          <input class="modal-file" type="file" name="file" accept=".csv" required>
+          <div class="modal-help">
+            Required column: name
+          </div>
+          <a class="template-link" href="/assets/templates/sub_category_import_template.csv" download>
+            Download sub category CSV template
+          </a>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeSubCategoryImportModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Import Sub Categories</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openSubCategoryImportModal(){
+  document.getElementById('importSubCategoryModal').style.display = 'flex';
+}
+function closeSubCategoryImportModal(){
+  document.getElementById('importSubCategoryModal').style.display = 'none';
+}
+</script>
 <?php
 $content = ob_get_clean();
 $title = 'Sub Categories';

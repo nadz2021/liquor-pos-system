@@ -1,3 +1,4 @@
+<?php use App\Core\Auth; ?>
 <!doctype html>
 <html>
 <head>
@@ -38,19 +39,37 @@
       </div>
 
       <div class="nav-links">
-        <a class="<?= isActive($path, '/') ?>" href="/">POS</a>
+  <a class="<?= isActive($path, '/') ?>" href="/">POS</a>
 
-        <?php if (in_array($role, ['owner','manager','cashier'], true)): ?>
-          <a class="<?= isActive($path, '/sales') ?>" href="/sales">Sales</a>
+  <?php if (Auth::can('sales.view') || Auth::can('pos.use')): ?>
+    <a class="<?= isActive($path, '/sales') ?>" href="/sales">Sales</a>
+  <?php endif; ?>
+
+  <?php if (Auth::can('products.manage') || Auth::can('categories.manage')): ?>
+    <div class="nav-dropdown <?= (str_starts_with($path, '/products') || str_starts_with($path, '/categories') || str_starts_with($path, '/subcategories')) ? 'active' : '' ?>">
+      <span class="dropdown-label">Products ▾</span>
+
+      <div class="dropdown-menu">
+        <?php if (Auth::can('products.manage')): ?>
+          <a class="<?= isActive($path, '/products') ?>" href="/products">Products</a>
         <?php endif; ?>
 
-        <?php if (in_array($role, ['owner','manager'], true)): ?>
-          <a class="<?= isActive($path, '/products') ?>" href="/products">Products</a>
+        <?php if (Auth::can('categories.manage')): ?>
           <a class="<?= isActive($path, '/categories') ?>" href="/categories">Categories</a>
           <a class="<?= isActive($path, '/subcategories') ?>" href="/subcategories">Sub Categories</a>
-          <a class="<?= isActive($path, '/settings') ?>" href="/settings">Settings</a>
         <?php endif; ?>
       </div>
+    </div>
+  <?php endif; ?>
+
+  <?php if (Auth::can('settings.manage')): ?>
+    <a class="<?= isActive($path, '/settings') ?>" href="/settings">Settings</a>
+  <?php endif; ?>
+
+  <?php if (Auth::can('users.manage')): ?>
+    <a class="<?= isActive($path, '/users') ?>" href="/users">Users</a>
+  <?php endif; ?>
+</div>
 
       <div class="nav-right">
         <form action="/logout" method="post" style="margin:0">

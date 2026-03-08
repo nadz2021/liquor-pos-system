@@ -296,6 +296,37 @@ upsertUser($pdo, 'Cashier', 'cashier', '1111', 'cashier');
 echo "Users ensured.\n";
 echo "Done.\n";
 
+/*
+|--------------------------------------------------------------------------
+| ADMIN USER
+|--------------------------------------------------------------------------
+*/
+// Seed default admin user
+$check = $pdo->prepare("SELECT id FROM users WHERE username = ?");
+$check->execute(['admin']);
+$exists = $check->fetch();
+
+if (!$exists) {
+    $hash = password_hash('admin123', PASSWORD_DEFAULT);
+
+    $st = $pdo->prepare("
+        INSERT INTO users (name, username, pin_hash, role, is_active)
+        VALUES (?, ?, ?, ?, ?)
+    ");
+
+    $st->execute([
+        'System Admin',
+        'admin',
+        $hash,
+        'admin',
+        1
+    ]);
+
+    echo "Admin user created (username: admin, password: admin123)\n";
+} else {
+    echo "Admin user already exists\n";
+}
+
 // WARNING WARNING DONT REMOVE THE COMMENT....
 // SET FOREIGN_KEY_CHECKS = 0;
 

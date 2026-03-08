@@ -41,6 +41,7 @@ final class App {
 
     $r->post('/import/products', 'ImportController@products');
     $r->post('/import/categories', 'ImportController@categories');
+    $r->post('/import/subcategories', 'ImportController@subcategories');
 
     $r->get('/sales', 'SalesController@index');
     $r->get('/sales/show', 'SalesController@show');

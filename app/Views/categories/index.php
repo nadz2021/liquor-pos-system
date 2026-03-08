@@ -7,9 +7,9 @@
   </div>
 
   <div class="page-actions">
-  <a href="/categories/create" class="btn btn-primary">+ Add Category</a>
-  <button type="button" class="btn-secondary" onclick="openCategoryImportModal()">Import CSV</button>
-</div>
+    <a href="/categories/create" class="btn btn-primary">+ Add Category</a>
+    <button type="button" class="btn-secondary" onclick="openCategoryImportModal()">Import CSV</button>
+  </div>
 </div>
 
 <div class="card">

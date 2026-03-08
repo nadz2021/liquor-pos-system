@@ -8,7 +8,6 @@
       <div class="header">
         <div class="brand">
           <div class="logo" aria-hidden="true">
-            <!-- simple bottle-like mark -->
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M10 3h4v2c0 .6.4 1 1 1h1v3c0 .6-.4 1-1 1v10a3 3 0 0 1-3 3h-2a3 3 0 0 1-3-3V10c-.6 0-1-.4-1-1V6h1c.6 0 1-.4 1-1V3z"
                     stroke="currentColor" stroke-width="1.6" />
@@ -29,7 +28,10 @@
       <hr class="sep">
 
       <div class="role-row">
-        <div class="chip owner" data-rolechip="1" data-username="admin" title="Owner">
+        <div class="chip admin" data-rolechip="1" data-username="admin" title="Admin">
+          <span class="dot"></span> Admin
+        </div>
+        <div class="chip owner" data-rolechip="1" data-username="owner" title="owner">
           <span class="dot"></span> Owner
         </div>
         <div class="chip manager" data-rolechip="1" data-username="manager" title="Manager">
@@ -51,14 +53,20 @@
         </div>
 
         <div class="form-group">
-          <label>PIN</label>
-          <input name="pin" type="password" inputmode="numeric" autocomplete="current-password" required>
+          <label>PIN / Password</label>
+          <input
+            name="pin"
+            type="password"
+            autocomplete="current-password"
+            required
+            placeholder="Enter PIN or password"
+          >
         </div>
 
         <button class="primary" type="submit">Login</button>
 
         <div class="default-login">
-          Default: Owner <strong>admin / 1234</strong> · Manager <strong>manager / 2222</strong> · Cashier <strong>cashier / 1111</strong>
+          Default: Admin <strong>admin / admin123</strong> · Manager <strong>manager / 2222</strong> · Cashier <strong>cashier / 1111</strong>
         </div>
       </form>
     </div>
@@ -66,7 +74,7 @@
     <!-- RIGHT: PIN pad -->
     <div class="login-card">
       <div class="pad-title">Touch PIN Pad</div>
-      <div class="pad-hint">Tap numbers to enter PIN. Use <strong>⌫</strong> to delete.</div>
+      <div class="pad-hint">Tap numbers for PIN users. Admin can also type password from keyboard.</div>
 
       <div id="pinpad" class="pinpad">
         <button type="button" class="pad-btn" data-pad="1">1</button>

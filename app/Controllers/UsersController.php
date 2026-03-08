@@ -10,8 +10,11 @@ class UsersController extends Controller {
     public function index(){
         Auth::requireLogin();
 
-        if(Auth::user()['role'] !== 'super_admin'){
-            echo "Forbidden"; return;
+        $role = Auth::user()['role'] ?? '';
+        if (!in_array($role, ['super_admin', 'admin', 'owner'], true)) {
+            http_response_code(403);
+            echo 'Forbidden';
+            return;
         }
 
         $this->view('users/index', [
