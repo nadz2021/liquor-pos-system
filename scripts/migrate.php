@@ -327,6 +327,37 @@ if (!$exists) {
     echo "Admin user already exists\n";
 }
 
+// If your table already exists, also add a safe alter after table creation:
+try {
+    $pdo->exec("ALTER TABLE users ADD COLUMN selling_mode ENUM('in_store','field') NOT NULL DEFAULT 'in_store' AFTER role");
+} catch (\Throwable $e) {
+    // column may already exist
+}
+
+try {
+    $pdo->exec("ALTER TABLE sales ADD COLUMN customer_id INT UNSIGNED NULL AFTER cashier_id");
+} catch (\Throwable $e) {
+    // may already exist
+}
+
+try {
+    $pdo->exec("ALTER TABLE sales ADD COLUMN sale_channel ENUM('in_store','field') NOT NULL DEFAULT 'in_store' AFTER customer_id");
+} catch (\Throwable $e) {
+    // may already exist
+}
+
+// If sales already exists, add safe alters:
+try {
+    $pdo->exec("
+        ALTER TABLE sales
+        ADD CONSTRAINT fk_sales_customer
+        FOREIGN KEY (customer_id) REFERENCES customers(id)
+        ON DELETE SET NULL
+    ");
+} catch (\Throwable $e) {
+    // may already exist
+}
+
 // WARNING WARNING DONT REMOVE THE COMMENT....
 // SET FOREIGN_KEY_CHECKS = 0;
 

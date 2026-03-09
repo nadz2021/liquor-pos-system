@@ -19,15 +19,16 @@ class User {
         $username = trim((string)($data['username'] ?? ''));
         $role = trim((string)($data['role'] ?? ''));
         $pin = trim((string)($data['pin'] ?? ''));
+        $sellingMode = trim((string)($data['selling_mode'] ?? 'in_store'));
         $isActive = isset($data['is_active']) ? 1 : 0;
 
         $pinHash = password_hash($pin, PASSWORD_DEFAULT);
 
         $st = $pdo->prepare("
-            INSERT INTO users (name, username, role, pin_hash, is_active)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO users (name, username, role, selling_mode, pin_hash, is_active)
+            VALUES (?, ?, ?, ?, ?, ?)
         ");
-        $st->execute([$name, $username, $role, $pinHash, $isActive]);
+        $st->execute([$name, $username, $role, $sellingMode, $pinHash, $isActive]);
 
         return (int)$pdo->lastInsertId();
     }
@@ -134,6 +135,7 @@ class User {
         $name = trim((string)($data['name'] ?? ''));
         $username = trim((string)($data['username'] ?? ''));
         $role = trim((string)($data['role'] ?? ''));
+        $sellingMode = trim((string)($data['selling_mode'] ?? 'in_store'));
         $pin = trim((string)($data['pin'] ?? ''));
         $isActive = isset($data['is_active']) ? 1 : 0;
 
@@ -142,17 +144,17 @@ class User {
 
             $st = $pdo->prepare("
                 UPDATE users
-                SET name = ?, username = ?, role = ?, pin_hash = ?, is_active = ?
+                SET name = ?, username = ?, role = ?, selling_mode = ?, pin_hash = ?, is_active = ?
                 WHERE id = ?
             ");
-            $st->execute([$name, $username, $role, $pinHash, $isActive, $id]);
+            $st->execute([$name, $username, $role, $sellingMode, $pinHash, $isActive, $id]);
         } else {
             $st = $pdo->prepare("
                 UPDATE users
-                SET name = ?, username = ?, role = ?, is_active = ?
+                SET name = ?, username = ?, role = ?, selling_mode = ?, is_active = ?
                 WHERE id = ?
             ");
-            $st->execute([$name, $username, $role, $isActive, $id]);
+            $st->execute([$name, $username, $role, $sellingMode, $isActive, $id]);
         }
     }
 

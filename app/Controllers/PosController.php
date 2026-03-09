@@ -10,6 +10,7 @@ use App\Core\DB;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Audit;
+use App\Models\Customer;
 
 final class PosController extends Controller {
   public function index() {
@@ -47,6 +48,10 @@ final class PosController extends Controller {
     $pm = (string)($body['payment_method'] ?? 'cash');
     $ref = $body['payment_ref'] ?? null;
     $amountReceived = (float)($body['amount_received'] ?? 0);
+    $customerName = trim((string)($body['customer_name'] ?? ''));
+    $customerContact = trim((string)($body['customer_contact'] ?? ''));
+    $customerAddress = trim((string)($body['customer_address'] ?? ''));
+    $saleChannel = (string)(Auth::user()['selling_mode'] ?? 'in_store');
 
     if (!is_array($cart) || count($cart)===0) return $this->json(['ok'=>false,'msg'=>'Empty cart'], 422);
 
@@ -86,10 +91,49 @@ final class PosController extends Controller {
       }
 
       $cashierId = (int)Auth::user()['id'];
+      $customerId = null;
 
-      $st = $pdo->prepare("INSERT INTO sales (sale_no,cashier_id,subtotal,tax_total,total,amount_received,change_due,payment_method,payment_ref)
-                          VALUES (?,?,?,?,?,?,?,?,?)");
-      $st->execute([$saleNo,$cashierId,$subtotal,$taxTotal,$total,$amountReceived,$changeDue,$pm,$ref]);
+      if ($saleChannel === 'field') {
+          if ($customerName === '' || $customerContact === '') {
+              return $this->json(['ok' => false, 'msg' => 'Customer name and contact are required for outside field sales.'], 422);
+          }
+
+          $customerId = Customer::findOrCreate(
+              $customerName,
+              $customerContact,
+              $customerAddress !== '' ? $customerAddress : null
+          );
+      }
+
+      $st = $pdo->prepare("
+          INSERT INTO sales (
+              sale_no,
+              cashier_id,
+              customer_id,
+              sale_channel,
+              subtotal,
+              tax_total,
+              total,
+              amount_received,
+              change_due,
+              payment_method,
+              payment_ref
+          )
+          VALUES (?,?,?,?,?,?,?,?,?,?,?)
+      ");
+      $st->execute([
+          $saleNo,
+          $cashierId,
+          $customerId,
+          $saleChannel,
+          $subtotal,
+          $taxTotal,
+          $total,
+          $amountReceived,
+          $changeDue,
+          $pm,
+          $ref
+      ]);
       $saleId = (int)$pdo->lastInsertId();
 
       $itemSt = $pdo->prepare("INSERT INTO sale_items (sale_id,product_id,barcode,name,qty,unit_price,line_total)
@@ -113,7 +157,13 @@ final class PosController extends Controller {
       }
 
       Audit::log($cashierId, 'sale.created', [
-        'sale_no'=>$saleNo,'total'=>$total,'pm'=>$pm,'amount_received'=>$amountReceived,'change_due'=>$changeDue
+          'sale_no' => $saleNo,
+          'total' => $total,
+          'pm' => $pm,
+          'amount_received' => $amountReceived,
+          'change_due' => $changeDue,
+          'sale_channel' => $saleChannel,
+          'customer_name' => $customerName !== '' ? $customerName : null,
       ]);
 
       $q = $pdo->prepare("INSERT INTO sync_queue (entity, entity_id, payload) VALUES ('sale', ?, ?)");

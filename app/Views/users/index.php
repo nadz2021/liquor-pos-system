@@ -74,19 +74,27 @@ if (!empty($_SESSION['flash_users'])): ?>
         </div>
       </div>
     </div>
-
-    <div class="field">
-      <label style="display:block; margin-bottom:10px;">Status</label>
-      <label style="display:inline-flex; align-items:center; gap:8px;">
-        <input
-          type="checkbox"
-          name="is_active"
-          value="1"
-          <?= !isset($editUser['is_active']) || (int)$editUser['is_active'] === 1 ? 'checked' : '' ?>
-          style="width:auto;"
-        >
-        Active
-      </label>
+    <div class="form-row">
+        <div class="field">
+            <label>Selling Mode</label>
+            <select name="selling_mode" required>
+                <option value="in_store" <?= (($editUser['selling_mode'] ?? 'in_store') === 'in_store') ? 'selected' : '' ?>>In Store</option>
+                <option value="field" <?= (($editUser['selling_mode'] ?? '') === 'field') ? 'selected' : '' ?>>Outside Field</option>
+            </select>
+        </div>
+        <div class="field">
+          <label style="display:block; margin-bottom:10px;">Status</label>
+          <label style="display:inline-flex; align-items:center; gap:8px;">
+            <input
+              type="checkbox"
+              name="is_active"
+              value="1"
+              <?= !isset($editUser['is_active']) || (int)$editUser['is_active'] === 1 ? 'checked' : '' ?>
+              style="width:auto;"
+            >
+            Active
+          </label>
+        </div>
     </div>
 
     <div style="margin-top:8px; display:flex; gap:8px;">
@@ -131,6 +139,7 @@ if (!empty($_SESSION['flash_users'])): ?>
           <th>Username</th>
           <th>Role</th>
           <th>Status</th>
+          <th>Selling Mode</th>
           <th class="right">Actions</th>
         </tr>
       </thead>
@@ -153,6 +162,11 @@ if (!empty($_SESSION['flash_users'])): ?>
               <?php else: ?>
                 <span class="badge badge-warn">Inactive</span>
               <?php endif; ?>
+            </td>
+            <td>
+                <span class="badge">
+                    <?= htmlspecialchars(($u['selling_mode'] ?? 'in_store') === 'field' ? 'Outside Field' : 'In Store') ?>
+                </span>
             </td>
             <td class="right">
                 <a href="/users/edit?id=<?= (int)($u['id'] ?? 0) ?>" class="btn btn-ghost">Edit</a>

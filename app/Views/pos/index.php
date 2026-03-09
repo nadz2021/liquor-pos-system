@@ -7,7 +7,7 @@ ob_start();
 
 $categories = [];
 $products = [];
-
+var_dump($user);
 try {
   $pdo = DB::pdo();
 
@@ -143,6 +143,22 @@ try {
           <button type="button" class="btn" onclick="clearReceived()">Clear</button>
         </div>
       </div>
+      <div id="fieldCustomerFields" style="margin-top:12px; display:none;">
+        <div class="field">
+          <label>Customer Name</label>
+          <input id="co_customer_name" type="text" placeholder="Enter customer name">
+        </div>
+
+        <div class="field" style="margin-top:10px;">
+          <label>Contact Number</label>
+          <input id="co_customer_contact" type="text" placeholder="Enter contact number">
+        </div>
+
+        <div class="field" style="margin-top:10px;">
+          <label>Address (Optional)</label>
+          <textarea id="co_customer_address" placeholder="Enter address"></textarea>
+        </div>
+      </div>
 
       <div class="total-row" style="margin-top:8px;">
         <span class="muted">Change</span>
@@ -161,7 +177,9 @@ try {
 const PRINT_BRIDGE_URL = <?= json_encode($printBridge) ?>;
 const CATEGORIES = <?= json_encode($categories, JSON_UNESCAPED_SLASHES) ?>;
 const PRODUCTS = <?= json_encode($products, JSON_UNESCAPED_SLASHES) ?>;
-
+const CURRENT_USER = <?= json_encode($user ?? []) ?>;
+const SELLING_MODE = <?= json_encode($user['selling_mode'] ?? 'in_store') ?>;
+console.log(SELLING_MODE);
 let activeCat = 'all';
 const cart = [];
 
@@ -327,6 +345,18 @@ function renderProducts(){
 
 // Checkout modal
 function openCheckout(){
+  const fieldWrap = document.getElementById('fieldCustomerFields');
+  if (fieldWrap) {
+    fieldWrap.style.display = (SELLING_MODE === 'field') ? 'block' : 'none';
+  }
+
+  const nameEl = document.getElementById('co_customer_name');
+  const contactEl = document.getElementById('co_customer_contact');
+  const addressEl = document.getElementById('co_customer_address');
+
+  if (nameEl) nameEl.value = '';
+  if (contactEl) contactEl.value = '';
+  if (addressEl) addressEl.value = '';
   if (!cart.length) return alert('Empty cart');
 
   const sub = parseFloat(document.getElementById('subtotal').innerText || '0');
@@ -386,6 +416,15 @@ document.getElementById('co_pm')?.addEventListener('change', () => {
 document.getElementById('co_received')?.addEventListener('input', updateCheckoutComputed);
 
 async function confirmCheckout(){
+  const customer_name = (document.getElementById('co_customer_name')?.value || '').trim();
+  const customer_contact = (document.getElementById('co_customer_contact')?.value || '').trim();
+  const customer_address = (document.getElementById('co_customer_address')?.value || '').trim();
+
+  if (SELLING_MODE === 'field') {
+    if (!customer_name || !customer_contact) {
+      return alert('Customer name and contact are required for outside field sales.');
+    }
+  }
   const total = parseFloat(document.getElementById('co_total').innerText || '0');
   const pm = document.getElementById('co_pm').value;
   const payment_ref = (document.getElementById('co_ref').value || '').trim() || null;
@@ -398,7 +437,15 @@ async function confirmCheckout(){
   const res = await fetch('/pos/checkout', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ cart, payment_method: pm, payment_ref, amount_received })
+    body: JSON.stringify({
+      cart,
+      payment_method: pm,
+      payment_ref,
+      amount_received,
+      customer_name,
+      customer_contact,
+      customer_address
+    })
   });
 
   const data = await res.json();

@@ -1,12 +1,22 @@
 CREATE TABLE IF NOT EXISTS users (
-  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
-  username VARCHAR(60) NOT NULL UNIQUE,
+  username VARCHAR(80) NOT NULL UNIQUE,
   pin_hash VARCHAR(255) NOT NULL,
-  role ENUM('owner','manager','cashier') NOT NULL,
+  role VARCHAR(30) NOT NULL,
+  selling_mode ENUM('in_store','field') NOT NULL DEFAULT 'in_store',
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS customers (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  contact_number VARCHAR(50) NOT NULL,
+  address TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_customer_name_contact (name, contact_number)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS settings (
   id INT PRIMARY KEY AUTO_INCREMENT,
@@ -71,23 +81,22 @@ CREATE TABLE IF NOT EXISTS purchase_order_items (
 );
 
 CREATE TABLE IF NOT EXISTS sales (
-  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  sale_no VARCHAR(30) NOT NULL UNIQUE,
-  cashier_id BIGINT UNSIGNED NOT NULL,
-  subtotal DECIMAL(10,2) NOT NULL DEFAULT 0,
-  discount_total DECIMAL(10,2) NOT NULL DEFAULT 0,
-  tax_total DECIMAL(10,2) NOT NULL DEFAULT 0,
-  total DECIMAL(10,2) NOT NULL DEFAULT 0,
-  amount_received DECIMAL(10,2) NOT NULL DEFAULT 0,
-  change_due DECIMAL(10,2) NOT NULL DEFAULT 0,
-  payment_method ENUM('cash','gcash_ref','gift_card','store_credit','card_terminal') NOT NULL,
-  payment_ref VARCHAR(120) NULL,
-  loyalty_customer_id BIGINT UNSIGNED NULL,
-  loyalty_points_earned INT NOT NULL DEFAULT 0,
-  loyalty_points_redeemed INT NOT NULL DEFAULT 0,
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  sale_no VARCHAR(50) NOT NULL UNIQUE,
+  cashier_id INT UNSIGNED NOT NULL,
+  customer_id INT UNSIGNED NULL,
+  sale_channel ENUM('in_store','field') NOT NULL DEFAULT 'in_store',
+  subtotal DECIMAL(12,2) NOT NULL DEFAULT 0,
+  tax_total DECIMAL(12,2) NOT NULL DEFAULT 0,
+  total DECIMAL(12,2) NOT NULL DEFAULT 0,
+  amount_received DECIMAL(12,2) NOT NULL DEFAULT 0,
+  change_due DECIMAL(12,2) NOT NULL DEFAULT 0,
+  payment_method VARCHAR(50) NOT NULL,
+  payment_ref VARCHAR(100) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (cashier_id) REFERENCES users(id)
-);
+  CONSTRAINT fk_sales_cashier FOREIGN KEY (cashier_id) REFERENCES users(id),
+  CONSTRAINT fk_sales_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;;
 
 CREATE TABLE IF NOT EXISTS sale_items (
   id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,

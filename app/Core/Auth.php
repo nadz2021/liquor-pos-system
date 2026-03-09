@@ -44,6 +44,7 @@ final class Auth {
       'id' => (int)$u['id'],
       'name' => $u['name'],
       'username' => $u['username'],
+      'selling_mode' => $u['selling_mode'],
       'role' => $u['role']
     ];
     $_SESSION['last_activity'] = time();

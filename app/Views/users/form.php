@@ -70,6 +70,13 @@ $formAction = $isEdit
         </div>
       </div>
     </div>
+    <div class="field">
+        <label>Selling Mode</label>
+        <select name="selling_mode" required>
+            <option value="in_store" <?= (($editUser['selling_mode'] ?? 'in_store') === 'in_store') ? 'selected' : '' ?>>In Store</option>
+            <option value="field" <?= (($editUser['selling_mode'] ?? '') === 'field') ? 'selected' : '' ?>>Outside Field</option>
+        </select>
+    </div>
 
     <div class="field">
       <label style="display:block; margin-bottom:10px;">Status</label>
