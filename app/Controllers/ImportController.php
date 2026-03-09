@@ -309,33 +309,41 @@ final class ImportController extends Controller
             empty($_FILES['file']) ||
             ($_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
         ) {
-            http_response_code(400);
-            echo 'No CSV file uploaded.';
-            return;
+             $_SESSION['flash_import'] = [
+                'type' => 'error',
+                'message' => 'No CSV file uploaded.'
+            ];
+            header('Location: /subcategories');
         }
 
         $tmp = (string)$_FILES['file']['tmp_name'];
         $name = (string)($_FILES['file']['name'] ?? '');
 
         if (!$this->isCsvFile($name, $tmp)) {
-            http_response_code(400);
-            echo 'Invalid file. Please upload a CSV file.';
-            return;
+            $_SESSION['flash_import'] = [
+                'type' => 'error',
+                'message' => 'Invalid file. Please upload a CSV file.'
+            ];
+            header('Location: /subcategories');
         }
 
         $fp = fopen($tmp, 'r');
         if (!$fp) {
-            http_response_code(400);
-            echo 'Unable to read uploaded file.';
-            return;
+            $_SESSION['flash_import'] = [
+                'type' => 'error',
+                'message' => 'Unable to read uploaded file.'
+            ];
+            header('Location: /subcategories');
         }
 
         $headers = fgetcsv($fp);
         if (!$headers) {
             fclose($fp);
-            http_response_code(400);
-            echo 'CSV is empty.';
-            return;
+            $_SESSION['flash_import'] = [
+                'type' => 'error',
+                'message' => 'CSV is empty.'
+            ];
+            header('Location: /subcategories');
         }
 
         $headers = array_map(fn($v) => strtolower(trim((string)$v)), $headers);
@@ -344,9 +352,11 @@ final class ImportController extends Controller
         foreach ($required as $col) {
             if (!in_array($col, $headers, true)) {
                 fclose($fp);
-                http_response_code(400);
-                echo "Missing required column: {$col}";
-                return;
+                $_SESSION['flash_import'] = [
+                    'type' => 'error',
+                    'message' => 'Missing required column: '. $col
+                ];
+                header('Location: /subcategories');
             }
         }
 
@@ -364,13 +374,16 @@ final class ImportController extends Controller
             INSERT INTO subcategories (category_id, name, description)
             VALUES (?, ?, ?)
         ");
-
+        $newCount = 0;
+        $skipCount = 0;
+        $emptyCount = 0;
         while (($row = fgetcsv($fp)) !== false) {
             $categoryName = trim((string)($row[$map['category']] ?? ''));
             $subcategoryName = trim((string)($row[$map['name']] ?? ''));
             $description = trim((string)($row[$map['description']] ?? ''));
 
             if ($categoryName === '' || $subcategoryName === '') {
+                $emptyCount++;
                 continue;
             }
 
@@ -380,6 +393,7 @@ final class ImportController extends Controller
             
             $checkSubcategory->execute([$categoryId, $subcategoryName]);
             if ((int)$checkSubcategory->fetchColumn() > 0) {
+                $skipCount++;
                 continue;
             }
 
@@ -388,9 +402,15 @@ final class ImportController extends Controller
                 $subcategoryName,
                 $description !== '' ? $description : null
             ]);
+            $newCount++;
+
         }
 
         fclose($fp);
+        $_SESSION['flash_import'] = [
+            'type' => 'success',
+            'message' => "Import completed. New categories: {$newCount}. Skipped duplicates: {$skipCount}. Empty rows skipped: {$emptyCount}."
+        ];
 
         header('Location: /subcategories');
         exit;

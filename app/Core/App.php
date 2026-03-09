@@ -49,6 +49,14 @@ final class App {
     $r->get('/settings', 'SettingsController@index');
     $r->post('/settings/save', 'SettingsController@save');
 
+    $r->get('/users', 'UsersController@index');
+    $r->get('/users', 'UsersController@index');
+    $r->post('/users/store', 'UsersController@store');
+    $r->get('/users/edit', 'UsersController@edit');
+    $r->post('/users/update', 'UsersController@update');
+    $r->post('/users/toggle', 'UsersController@toggle');
+    $r->post('/users/reset-pin', 'UsersController@resetPin');
+
     $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
     $r->dispatch($_SERVER['REQUEST_METHOD'], $path);
   }

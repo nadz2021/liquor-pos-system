@@ -71,13 +71,35 @@ final class Auth {
     $u = self::user();
     if (!$u) return false;
 
-    if (in_array($u['role'], ['owner', 'admin', 'super_admin'], true)) return true;
-
     $map = [
-      'manager' => ['pos.use','products.manage','inventory.manage','po.manage','reports.view','loyalty.manage','categories.manage'],
-      'cashier' => ['pos.use'],
+      'super_admin' => ['*'],
+      'admin' => ['*'],
+      'owner' => [
+        'pos.use',
+        'sales.view',
+        'products.manage',
+        'categories.manage',
+        'settings.manage',
+      ],
+      'manager' => [
+        'pos.use',
+        'sales.view',
+        'products.manage',
+        'inventory.manage',
+        'po.manage',
+        'reports.view',
+        'loyalty.manage',
+        'categories.manage',
+        'settings.manage',
+      ],
+      'cashier' => [
+        'pos.use',
+        'sales.view',
+      ],
     ];
 
-    return in_array($cap, $map[$u['role']] ?? [], true);
+    $allowed = $map[$u['role']] ?? [];
+
+    return in_array('*', $allowed, true) || in_array($cap, $allowed, true);
   }
 }
