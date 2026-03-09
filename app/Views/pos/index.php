@@ -7,7 +7,7 @@ ob_start();
 
 $categories = [];
 $products = [];
-var_dump($user);
+
 try {
   $pdo = DB::pdo();
 
