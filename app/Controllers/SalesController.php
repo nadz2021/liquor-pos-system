@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Core\Auth;
 use App\Models\Sale;
+use App\Models\Audit;
 
 final class SalesController extends Controller
 {
@@ -34,5 +35,41 @@ final class SalesController extends Controller
 
     $items = Sale::items($id);
     $this->view('sales/view', ['user'=>$user, 'sale'=>$sale, 'items'=>$items]);
+  }
+
+  public function refund(): void
+  {
+    Auth::requireLogin();
+
+    if (!Auth::can('sales.refund')) {
+      http_response_code(403);
+      echo "Forbidden";
+      return;
+    }
+
+    $saleId = (int)($_POST['sale_id'] ?? 0);
+    $reason = trim((string)($_POST['refund_reason'] ?? ''));
+
+    if (!$saleId) {
+      http_response_code(400);
+      echo "Bad request";
+      return;
+    }
+
+    try {
+      Sale::refund($saleId, (int)Auth::user()['id'], $reason);
+
+      Audit::log((int)Auth::user()['id'], 'sale.refunded', [
+        'sale_id' => $saleId,
+        'reason' => $reason,
+      ]);
+
+      header('Location: /sales/show?id=' . $saleId);
+      exit;
+
+    } catch (\Throwable $e) {
+      http_response_code(400);
+      echo "Refund error: " . htmlspecialchars($e->getMessage());
+    }
   }
 }

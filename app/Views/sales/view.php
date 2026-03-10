@@ -17,12 +17,21 @@
       <div class="muted">Cashier</div>
       <div style="font-weight:800;"><?= htmlspecialchars($sale['cashier_name']) ?></div>
     </div>
+    <?php if (!empty($sale['customer_name'])): ?>
+    <div>
+      <div class="muted">Customer</div>
+      <div style="font-weight:800;"><?= htmlspecialchars($sale['customer_name']) ?></div>
+    </div>
+    <?php endif; ?>
     <div>
       <div class="muted">Payment</div>
       <div style="font-weight:800;">
         <?= htmlspecialchars($sale['payment_method']) ?>
         <?php if (!empty($sale['payment_ref'])): ?>
           <span class="badge">Ref: <?= htmlspecialchars($sale['payment_ref']) ?></span>
+        <?php endif;
+        if ((int)($sale['is_refunded'] ?? 0) === 1): ?>
+          <span class="badge badge-warn">Refunded</span>
         <?php endif; ?>
       </div>
     </div>
@@ -56,6 +65,20 @@
       </div>
     </div>
   </div>
+  <?php if ((int)($sale['is_refunded'] ?? 0) === 1): ?>
+    <div class="spacer"></div>
+
+    <div class="form-row">
+      <div>
+        <div class="muted">Refunded At</div>
+        <div style="font-weight:800;"><?= htmlspecialchars((string)($sale['refunded_at'] ?? '')) ?></div>
+      </div>
+      <div>
+        <div class="muted">Refund Reason</div>
+        <div style="font-weight:800;"><?= htmlspecialchars((string)($sale['refund_reason'] ?? '')) ?></div>
+      </div>
+    </div>
+  <?php endif; ?>
 </div>
 
 <div class="spacer"></div>
@@ -84,5 +107,34 @@
     <?php endforeach; ?>
   </tbody>
 </table>
+<?php if (in_array(($user['role'] ?? ''), ['super_admin', 'admin', 'owner', 'manager'], true)): ?>
+  <div class="spacer"></div>
 
+  <div class="card">
+    <h3 style="margin-top:0;">Refund</h3>
+
+    <?php if ((int)($sale['is_refunded'] ?? 0) === 1): ?>
+      <div class="badge badge-warn">This sale is already refunded.</div>
+    <?php else: ?>
+      <form method="post" action="/sales/refund" class="form">
+        <input type="hidden" name="sale_id" value="<?= (int)$sale['id'] ?>">
+
+        <div class="field">
+          <label>Refund Reason</label>
+          <textarea name="refund_reason" placeholder="Optional reason for refund"></textarea>
+        </div>
+
+        <div class="page-actions">
+          <button
+            class="btn btn-danger"
+            type="submit"
+            onclick="return confirm('Are you sure you want to refund this sale? Stock will be returned.')"
+          >
+            Refund Sale
+          </button>
+        </div>
+      </form>
+    <?php endif; ?>
+  </div>
+<?php endif; ?>
 <?php $content = ob_get_clean(); $title='Sale Details'; require __DIR__ . '/../layouts/main.php'; ?>

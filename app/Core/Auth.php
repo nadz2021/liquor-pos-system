@@ -78,6 +78,7 @@ final class Auth {
       'owner' => [
         'pos.use',
         'sales.view',
+        'sales.refund',
         'products.manage',
         'categories.manage',
         'settings.manage',
@@ -85,6 +86,7 @@ final class Auth {
       'manager' => [
         'pos.use',
         'sales.view',
+        'sales.refund',
         'products.manage',
         'inventory.manage',
         'po.manage',

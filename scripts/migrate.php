@@ -239,6 +239,11 @@ addColumnIfMissing($pdo, 'suppliers', 'description', 'description TEXT NULL AFTE
 addColumnIfMissing($pdo, 'categories', 'description', 'description TEXT NULL AFTER name');
 addColumnIfMissing($pdo, 'subcategories', 'description', 'description TEXT NULL AFTER name');
 
+addColumnIfMissing($pdo, 'sales', 'is_refunded', 'is_refunded TINYINT(1) NOT NULL DEFAULT 0 AFTER change_due');
+addColumnIfMissing($pdo, 'sales', 'refunded_at', 'refunded_at TIMESTAMP NULL AFTER is_refunded');
+addColumnIfMissing($pdo, 'sales', 'refunded_by', 'refunded_by BIGINT UNSIGNED NULL AFTER refunded_at');
+addColumnIfMissing($pdo, 'sales', 'refund_reason', 'refund_reason TEXT NULL AFTER refunded_by');
+
 echo "Columns ensured.\n";
 
 /*
@@ -350,8 +355,8 @@ try {
 try {
     $pdo->exec("
         ALTER TABLE sales
-        ADD CONSTRAINT fk_sales_customer
-        FOREIGN KEY (customer_id) REFERENCES customers(id)
+        ADD CONSTRAINT fk_sales_refunded_by
+        FOREIGN KEY (refunded_by) REFERENCES users(id)
         ON DELETE SET NULL
     ");
 } catch (\Throwable $e) {
