@@ -46,6 +46,7 @@ final class App {
     $r->get('/sales', 'SalesController@index');
     $r->get('/sales/show', 'SalesController@show');
     $r->post('/sales/refund', 'SalesController@refund');
+    $r->get('/sales/export', 'SalesController@export');
 
     $r->get('/settings', 'SettingsController@index');
     $r->post('/settings/save', 'SettingsController@save');

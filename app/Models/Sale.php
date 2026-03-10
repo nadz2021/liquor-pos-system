@@ -151,4 +151,160 @@ final class Sale
 
     }
   }
+  public static function filteredListForUser(array $user, array $filters = [], int $limit = 500): array
+  {
+    $pdo = DB::pdo();
+    $role = $user['role'] ?? '';
+    $uid  = (int)($user['id'] ?? 0);
+
+    $where = [];
+    $params = [];
+
+    if ($role === 'cashier') {
+      $where[] = 's.cashier_id = ?';
+      $params[] = $uid;
+    }
+
+    if (!empty($filters['date_from'])) {
+      $where[] = 'DATE(s.created_at) >= ?';
+      $params[] = $filters['date_from'];
+    }
+
+    if (!empty($filters['date_to'])) {
+      $where[] = 'DATE(s.created_at) <= ?';
+      $params[] = $filters['date_to'];
+    }
+
+    if (!empty($filters['cashier_id'])) {
+      $where[] = 's.cashier_id = ?';
+      $params[] = (int)$filters['cashier_id'];
+    }
+
+    if (!empty($filters['sale_channel'])) {
+      $where[] = 's.sale_channel = ?';
+      $params[] = $filters['sale_channel'];
+    }
+
+    if (!empty($filters['payment_method'])) {
+      $where[] = 's.payment_method = ?';
+      $params[] = $filters['payment_method'];
+    }
+
+    if (isset($filters['is_refunded']) && $filters['is_refunded'] !== '') {
+      $where[] = 's.is_refunded = ?';
+      $params[] = (int)$filters['is_refunded'];
+    }
+
+    $sql = "
+      SELECT s.*, u.name AS cashier_name, c.name AS customer_name
+      FROM sales s
+      JOIN users u ON u.id = s.cashier_id
+      LEFT JOIN customers c ON c.id = s.customer_id
+    ";
+
+    if ($where) {
+      $sql .= ' WHERE ' . implode(' AND ', $where);
+    }
+
+    $sql .= " ORDER BY s.id DESC LIMIT {$limit}";
+
+    $st = $pdo->prepare($sql);
+    $st->execute($params);
+    return $st->fetchAll();
+  }
+  public static function summaryForUser(array $user, array $filters = []): array
+  {
+    $pdo = DB::pdo();
+    $role = $user['role'] ?? '';
+    $uid  = (int)($user['id'] ?? 0);
+
+    $where = [];
+    $params = [];
+
+    if ($role === 'cashier') {
+      $where[] = 's.cashier_id = ?';
+      $params[] = $uid;
+    }
+
+    if (!empty($filters['date_from'])) {
+      $where[] = 'DATE(s.created_at) >= ?';
+      $params[] = $filters['date_from'];
+    }
+
+    if (!empty($filters['date_to'])) {
+      $where[] = 'DATE(s.created_at) <= ?';
+      $params[] = $filters['date_to'];
+    }
+
+    if (!empty($filters['cashier_id'])) {
+      $where[] = 's.cashier_id = ?';
+      $params[] = (int)$filters['cashier_id'];
+    }
+
+    if (!empty($filters['sale_channel'])) {
+      $where[] = 's.sale_channel = ?';
+      $params[] = $filters['sale_channel'];
+    }
+
+    if (!empty($filters['payment_method'])) {
+      $where[] = 's.payment_method = ?';
+      $params[] = $filters['payment_method'];
+    }
+
+    if (isset($filters['is_refunded']) && $filters['is_refunded'] !== '') {
+      $where[] = 's.is_refunded = ?';
+      $params[] = (int)$filters['is_refunded'];
+    }
+
+    $sql = "
+      SELECT
+        COUNT(*) AS sale_count,
+        COALESCE(SUM(s.total), 0) AS total_sales,
+        COALESCE(SUM(CASE WHEN s.is_refunded = 1 THEN s.total ELSE 0 END), 0) AS total_refunded,
+        COALESCE(SUM(CASE WHEN s.payment_method = 'cash' THEN s.total ELSE 0 END), 0) AS total_cash,
+        COALESCE(SUM(CASE WHEN s.payment_method <> 'cash' THEN s.total ELSE 0 END), 0) AS total_non_cash
+      FROM sales s
+    ";
+
+    if ($where) {
+      $sql .= ' WHERE ' . implode(' AND ', $where);
+    }
+
+    $st = $pdo->prepare($sql);
+    $st->execute($params);
+    $row = $st->fetch();
+
+    return $row ?: [
+      'sale_count' => 0,
+      'total_sales' => 0,
+      'total_refunded' => 0,
+      'total_cash' => 0,
+      'total_non_cash' => 0,
+    ];
+  }
+  public static function cashiers(): array
+  {
+    $pdo = DB::pdo();
+    return $pdo->query("
+      SELECT id, name, username, role
+      FROM users
+      WHERE is_active = 1
+      ORDER BY name ASC
+    ")->fetchAll();
+  }
+  public static function lowStockCount(): int
+  {
+    $pdo = DB::pdo();
+    $st = $pdo->query("
+      SELECT COUNT(*) AS c
+      FROM products
+      WHERE stock <= reorder_point
+        AND is_active = 1
+    ");
+    return (int)($st->fetch()['c'] ?? 0);
+  }
+  public static function exportRowsForUser(array $user, array $filters = []): array
+  {
+    return self::filteredListForUser($user, $filters, 5000);
+  }
 }
