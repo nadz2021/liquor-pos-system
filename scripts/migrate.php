@@ -224,6 +224,22 @@ CREATE TABLE IF NOT EXISTS sync_queue (
 
 echo "Schema applied.\n";
 
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS gift_cards (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  code VARCHAR(50) NOT NULL UNIQUE,
+  amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  status ENUM('created','assigned','redeemed') NOT NULL DEFAULT 'created',
+  assigned_at TIMESTAMP NULL,
+  redeemed_at TIMESTAMP NULL,
+  assigned_sale_id BIGINT UNSIGNED NULL,
+  redeemed_sale_id BIGINT UNSIGNED NULL,
+  customer_id INT UNSIGNED NULL,
+  created_by BIGINT UNSIGNED NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+");
+
 /*
 |--------------------------------------------------------------------------
 | ENSURE EXTRA COLUMNS
@@ -243,6 +259,13 @@ addColumnIfMissing($pdo, 'sales', 'is_refunded', 'is_refunded TINYINT(1) NOT NUL
 addColumnIfMissing($pdo, 'sales', 'refunded_at', 'refunded_at TIMESTAMP NULL AFTER is_refunded');
 addColumnIfMissing($pdo, 'sales', 'refunded_by', 'refunded_by BIGINT UNSIGNED NULL AFTER refunded_at');
 addColumnIfMissing($pdo, 'sales', 'refund_reason', 'refund_reason TEXT NULL AFTER refunded_by');
+
+addColumnIfMissing($pdo, 'gift_cards', 'assigned_at', 'assigned_at TIMESTAMP NULL AFTER status');
+addColumnIfMissing($pdo, 'gift_cards', 'redeemed_at', 'redeemed_at TIMESTAMP NULL AFTER assigned_at');
+addColumnIfMissing($pdo, 'gift_cards', 'assigned_sale_id', 'assigned_sale_id BIGINT UNSIGNED NULL AFTER redeemed_at');
+addColumnIfMissing($pdo, 'gift_cards', 'redeemed_sale_id', 'redeemed_sale_id BIGINT UNSIGNED NULL AFTER assigned_sale_id');
+addColumnIfMissing($pdo, 'gift_cards', 'customer_id', 'customer_id INT UNSIGNED NULL AFTER redeemed_sale_id');
+addColumnIfMissing($pdo, 'gift_cards', 'created_by', 'created_by BIGINT UNSIGNED NULL AFTER customer_id');
 
 echo "Columns ensured.\n";
 
@@ -357,6 +380,80 @@ try {
         ALTER TABLE sales
         ADD CONSTRAINT fk_sales_refunded_by
         FOREIGN KEY (refunded_by) REFERENCES users(id)
+        ON DELETE SET NULL
+    ");
+} catch (\Throwable $e) {
+    // may already exist
+}
+
+try {
+    $pdo->exec("ALTER TABLE gift_cards CHANGE COLUMN sold_at assigned_at TIMESTAMP NULL");
+} catch (\Throwable $e) {
+    // may not exist
+}
+
+try {
+    $pdo->exec("ALTER TABLE gift_cards CHANGE COLUMN sold_sale_id assigned_sale_id BIGINT UNSIGNED NULL");
+} catch (\Throwable $e) {
+    // may not exist
+}
+
+try {
+    $pdo->exec("ALTER TABLE gift_cards MODIFY COLUMN status ENUM('created','assigned','redeemed') NOT NULL DEFAULT 'created'");
+} catch (\Throwable $e) {
+    // may already be correct
+}
+
+try {
+    $pdo->exec("UPDATE gift_cards SET status='created' WHERE status='new'");
+} catch (\Throwable $e) {
+    // old status may not exist
+}
+
+try {
+    $pdo->exec("ALTER TABLE gift_cards ADD COLUMN customer_id INT UNSIGNED NULL");
+} catch (\Throwable $e) {
+    // ignore
+}
+
+try {
+    $pdo->exec("
+        ALTER TABLE gift_cards
+        ADD CONSTRAINT fk_gift_cards_assigned_sale
+        FOREIGN KEY (assigned_sale_id) REFERENCES sales(id)
+        ON DELETE SET NULL
+    ");
+} catch (\Throwable $e) {
+    // may already exist
+}
+
+try {
+    $pdo->exec("
+        ALTER TABLE gift_cards
+        ADD CONSTRAINT fk_gift_cards_redeemed_sale
+        FOREIGN KEY (redeemed_sale_id) REFERENCES sales(id)
+        ON DELETE SET NULL
+    ");
+} catch (\Throwable $e) {
+    // may already exist
+}
+
+try {
+    $pdo->exec("
+        ALTER TABLE gift_cards
+        ADD CONSTRAINT fk_gift_cards_customer
+        FOREIGN KEY (customer_id) REFERENCES customers(id)
+        ON DELETE SET NULL
+    ");
+} catch (\Throwable $e) {
+    // may already exist
+}
+
+try {
+    $pdo->exec("
+        ALTER TABLE gift_cards
+        ADD CONSTRAINT fk_gift_cards_created_by
+        FOREIGN KEY (created_by) REFERENCES users(id)
         ON DELETE SET NULL
     ");
 } catch (\Throwable $e) {

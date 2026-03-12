@@ -45,6 +45,10 @@
     <a class="<?= isActive($path, '/sales') ?>" href="/sales">Sales</a>
   <?php endif; ?>
 
+  <?php if (Auth::can('reports.view')): ?>
+    <a class="<?= isActive($path, '/reporting') ?>" href="/reporting">Reporting</a>
+  <?php endif; ?>
+
   <?php if (Auth::can('products.manage') || Auth::can('categories.manage')): ?>
     <div class="nav-dropdown <?= (str_starts_with($path, '/products') || str_starts_with($path, '/categories') || str_starts_with($path, '/subcategories')) ? 'active' : '' ?>">
       <span class="dropdown-label">Products ▾</span>
@@ -60,6 +64,9 @@
         <?php endif; ?>
       </div>
     </div>
+  <?php endif; ?>
+  <?php if (Auth::can('gift_cards.manage')): ?>
+    <a class="<?= isActive($path, '/gift-cards') ?>" href="/gift-cards">Gift Cards</a>
   <?php endif; ?>
 
   <?php if (Auth::can('settings.manage')): ?>

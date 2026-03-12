@@ -81,6 +81,8 @@ final class Auth {
         'sales.refund',
         'products.manage',
         'categories.manage',
+        'gift_cards.manage',
+        'reports.view',
         'settings.manage',
       ],
       'manager' => [
@@ -93,6 +95,7 @@ final class Auth {
         'reports.view',
         'loyalty.manage',
         'categories.manage',
+        'gift_cards.manage',
         'settings.manage',
       ],
       'cashier' => [

@@ -34,6 +34,11 @@ final class App {
     $r->post('/categories/update', 'CategoriesController@update');
     $r->post('/categories/delete', 'CategoriesController@delete');
 
+    $r->get('/gift-cards', 'GiftCardsController@index');
+    $r->post('/gift-cards/store', 'GiftCardsController@store');
+    $r->post('/gift-cards/assign', 'GiftCardsController@assign');
+    $r->get('/gift-cards/check', 'GiftCardsController@check');
+
     $r->get('/subcategories', 'SubcategoriesController@index');
     $r->post('/subcategories/store', 'SubcategoriesController@store');
     $r->post('/subcategories/delete', 'SubcategoriesController@delete');
@@ -48,10 +53,18 @@ final class App {
     $r->post('/sales/refund', 'SalesController@refund');
     $r->get('/sales/export', 'SalesController@export');
 
+    $r->get('/reporting', 'ReportingController@index');
+    $r->get('/reporting/products', 'ReportingController@products');
+    $r->get('/reporting/categories', 'ReportingController@categories');
+    $r->get('/reporting/hours', 'ReportingController@hours');
+    $r->get('/reporting/customers', 'ReportingController@customers');
+    $r->get('/reporting/cashiers', 'ReportingController@cashiers');
+    $r->get('/reporting/refunds', 'ReportingController@refunds');
+    $r->get('/reporting/export', 'ReportingController@export');
+
     $r->get('/settings', 'SettingsController@index');
     $r->post('/settings/save', 'SettingsController@save');
 
-    $r->get('/users', 'UsersController@index');
     $r->get('/users', 'UsersController@index');
     $r->post('/users/store', 'UsersController@store');
     $r->get('/users/edit', 'UsersController@edit');

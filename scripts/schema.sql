@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS products (
   name VARCHAR(255) NOT NULL,
   description TEXT NULL,
   image_path VARCHAR(255) NULL,
-  category_id INT NULL,
+  category_id INT UNSIGNED NULL,
   subcategory_id INT NULL,
   cost DECIMAL(10,2) NOT NULL DEFAULT 0,
   price DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -154,15 +154,15 @@ CREATE TABLE IF NOT EXISTS sync_queue (
 );
 
 CREATE TABLE IF NOT EXISTS categories (
-  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(120) NOT NULL UNIQUE,
   description TEXT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS subcategories (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  category_id INT NOT NULL,
+  id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  category_id INT UNSIGNED NOT NULL,
   name VARCHAR(120) NOT NULL,
   description TEXT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -170,4 +170,34 @@ CREATE TABLE IF NOT EXISTS subcategories (
   CONSTRAINT fk_subcategories_category
     FOREIGN KEY (category_id) REFERENCES categories(id)
     ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS gift_cards (
+  id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  code VARCHAR(50) NOT NULL UNIQUE,
+  amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  status ENUM('created','assigned','redeemed') NOT NULL DEFAULT 'created',
+  assigned_at TIMESTAMP NULL,
+  redeemed_at TIMESTAMP NULL,
+  assigned_sale_id INT UNSIGNED NULL,
+  redeemed_sale_id INT UNSIGNED NULL,
+  customer_id INT UNSIGNED NULL,
+  created_by INT UNSIGNED NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_gift_cards_assigned_sale
+    FOREIGN KEY (assigned_sale_id) REFERENCES sales(id)
+    ON DELETE SET NULL,
+
+  CONSTRAINT fk_gift_cards_redeemed_sale
+    FOREIGN KEY (redeemed_sale_id) REFERENCES sales(id)
+    ON DELETE SET NULL,
+
+  CONSTRAINT fk_gift_cards_customer
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+    ON DELETE SET NULL,
+
+  CONSTRAINT fk_gift_cards_created_by
+    FOREIGN KEY (created_by) REFERENCES users(id)
+    ON DELETE SET NULL
 );
