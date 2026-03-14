@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Models;
@@ -180,6 +181,111 @@ final class Report
             WHERE DATE(s.created_at) BETWEEN ? AND ?
             GROUP BY u.id, u.name, u.username
             ORDER BY total_sales DESC, sale_count DESC
+        ");
+        $st->execute([$from, $to]);
+
+        return $st->fetchAll();
+    }
+    public static function todaySummary(): array
+    {
+        $pdo = DB::pdo();
+
+        $st = $pdo->query("
+        SELECT
+            COUNT(*) AS total_transactions,
+            COALESCE(SUM(total), 0) AS total_sales,
+            COALESCE(SUM(CASE WHEN is_refunded = 1 THEN total ELSE 0 END), 0) AS total_refunded
+        FROM sales
+        WHERE DATE(created_at) = CURDATE()
+    ");
+
+        return $st->fetch() ?: [
+            'total_transactions' => 0,
+            'total_sales' => 0,
+            'total_refunded' => 0,
+        ];
+    }
+
+    public static function bestProductToday(): ?array
+    {
+        $pdo = DB::pdo();
+
+        $st = $pdo->query("
+        SELECT
+            si.name,
+            SUM(si.qty) AS total_qty,
+            SUM(si.line_total) AS total_sales
+        FROM sale_items si
+        INNER JOIN sales s ON s.id = si.sale_id
+        WHERE DATE(s.created_at) = CURDATE()
+        GROUP BY si.name
+        ORDER BY total_qty DESC, total_sales DESC
+        LIMIT 1
+    ");
+
+        $row = $st->fetch();
+        return $row ?: null;
+    }
+
+    public static function topCashierToday(): ?array
+    {
+        $pdo = DB::pdo();
+
+        $st = $pdo->query("
+        SELECT
+            u.name AS cashier_name,
+            COUNT(s.id) AS sale_count,
+            SUM(s.total) AS total_sales
+        FROM sales s
+        INNER JOIN users u ON u.id = s.cashier_id
+        WHERE DATE(s.created_at) = CURDATE()
+        GROUP BY u.id, u.name
+        ORDER BY total_sales DESC, sale_count DESC
+        LIMIT 1
+    ");
+
+        $row = $st->fetch();
+        return $row ?: null;
+    }
+    public static function salesBySubcategory(string $from, string $to): array
+    {
+        $pdo = DB::pdo();
+
+        $st = $pdo->prepare("
+            SELECT
+                COALESCE(sc.name, 'Uncategorized') AS subcategory_name,
+                SUM(si.qty) AS total_qty,
+                SUM(si.line_total) AS total_sales
+            FROM sale_items si
+            INNER JOIN sales s ON s.id = si.sale_id
+            INNER JOIN products p ON p.id = si.product_id
+            LEFT JOIN subcategories sc ON sc.id = p.subcategory_id
+            WHERE DATE(s.created_at) BETWEEN ? AND ?
+            GROUP BY sc.name
+            ORDER BY total_sales DESC, total_qty DESC
+            LIMIT 10
+        ");
+        $st->execute([$from, $to]);
+
+        return $st->fetchAll();
+    }
+
+    public static function topCashiers(string $from, string $to, int $limit = 10): array
+    {
+        $pdo = DB::pdo();
+
+        $st = $pdo->prepare("
+            SELECT
+                u.name AS cashier_name,
+                u.username,
+                COUNT(s.id) AS sale_count,
+                SUM(s.total) AS total_sales
+            FROM sales s
+            INNER JOIN users u ON u.id = s.cashier_id
+            WHERE DATE(s.created_at) BETWEEN ? AND ?
+            GROUP BY u.id, u.name, u.username
+            ORDER BY total_sales DESC, sale_count DESC
+            LIMIT {$limit}
         ");
         $st->execute([$from, $to]);
 

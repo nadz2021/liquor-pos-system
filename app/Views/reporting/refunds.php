@@ -3,13 +3,13 @@
 
 <div class="page-head">
   <div>
-    <h1 class="page-title">Sales by Category</h1>
-    <div class="page-subtitle">Category sales within the selected date range.</div>
+    <h1 class="page-title">Sales by Refunds</h1>
+    <div class="page-subtitle">Refunds sales within the selected date range.</div>
   </div>
 
   <div class="page-actions">
     <a class="btn" href="/reporting?from=<?= urlencode($from) ?>&to=<?= urlencode($to) ?>">Back to Reporting</a>
-    <a class="btn btn-primary" href="/reporting/export?type=categories&from=<?= urlencode($from) ?>&to=<?= urlencode($to) ?>">Export CSV</a>
+    <a class="btn btn-primary" href="/reporting/export?type=refunds&from=<?= urlencode($from) ?>&to=<?= urlencode($to) ?>">Export CSV</a>
   </div>
 </div>
 
@@ -36,9 +36,11 @@
 <table class="table">
   <thead>
     <tr>
-      <th>Category</th>
-      <th class="right">Qty Sold</th>
-      <th class="right">Sales</th>
+      <th>Sale No</th>
+      <th>Cashier</th>
+      <th>Refunded At</th>
+      <th>Reason</th>
+      <th class="right">Amount</th>
     </tr>
   </thead>
   <tbody>
@@ -50,9 +52,11 @@
 
     <?php foreach ($rows as $r): ?>
       <tr>
-        <td><?= htmlspecialchars($r['category_name']) ?></td>
-        <td><?= htmlspecialchars($r['total_qty']) ?></td>
-        <td class="right"><?= (int)$r['total_sales'] ?></td>
+        <td><?= htmlspecialchars($r['sale_no']) ?></td>
+        <td><?= htmlspecialchars($r['cashier_name']) ?></td>
+        <td><?= htmlspecialchars($r['refunded_at']) ?></td>
+        <td><?= htmlspecialchars($r['refund_reason']) ?></td>
+        <td class="right"><?= (int)$r['total'] ?></td>
       </tr>
     <?php endforeach; ?>
   </tbody>
@@ -60,6 +64,6 @@
 
 <?php
 $content = ob_get_clean();
-$title = 'Sales by Categories';
+$title = 'Sales by Refunds';
 require __DIR__ . '/../layouts/main.php';
 ?>

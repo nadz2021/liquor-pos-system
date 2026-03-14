@@ -3,13 +3,13 @@
 
 <div class="page-head">
   <div>
-    <h1 class="page-title">Sales by Category</h1>
-    <div class="page-subtitle">Category sales within the selected date range.</div>
+    <h1 class="page-title">Sales by Customer</h1>
+    <div class="page-subtitle">Customer sales within the selected date range.</div>
   </div>
 
   <div class="page-actions">
     <a class="btn" href="/reporting?from=<?= urlencode($from) ?>&to=<?= urlencode($to) ?>">Back to Reporting</a>
-    <a class="btn btn-primary" href="/reporting/export?type=categories&from=<?= urlencode($from) ?>&to=<?= urlencode($to) ?>">Export CSV</a>
+    <a class="btn btn-primary" href="/reporting/export?type=customers&from=<?= urlencode($from) ?>&to=<?= urlencode($to) ?>">Export CSV</a>
   </div>
 </div>
 
@@ -36,8 +36,9 @@
 <table class="table">
   <thead>
     <tr>
-      <th>Category</th>
-      <th class="right">Qty Sold</th>
+      <th>Customer</th>
+      <th>Contact</th>
+      <th>Transactions</th>
       <th class="right">Sales</th>
     </tr>
   </thead>
@@ -50,8 +51,9 @@
 
     <?php foreach ($rows as $r): ?>
       <tr>
-        <td><?= htmlspecialchars($r['category_name']) ?></td>
-        <td><?= htmlspecialchars($r['total_qty']) ?></td>
+        <td><?= htmlspecialchars($r['customer_name']) ?></td>
+        <td><?= htmlspecialchars($r['contact_number']) ?></td>
+        <td><?= htmlspecialchars($r['sale_count']) ?></td>
         <td class="right"><?= (int)$r['total_sales'] ?></td>
       </tr>
     <?php endforeach; ?>
@@ -60,6 +62,6 @@
 
 <?php
 $content = ob_get_clean();
-$title = 'Sales by Categories';
+$title = 'Sales by Customers';
 require __DIR__ . '/../layouts/main.php';
 ?>
